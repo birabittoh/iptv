@@ -185,7 +185,10 @@ export default function App() {
         .map(url => allChannels.find(c => c.url === url))
         .filter((c): c is Channel => c !== undefined);
     } else {
-      nationChannels = allChannels.filter(c => c.nation === selectedNation.name);
+      const filtered = allChannels.filter(c => c.nation === selectedNation.name);
+      const favorites = filtered.filter(c => favoriteUrls.includes(c.url));
+      const others = filtered.filter(c => !favoriteUrls.includes(c.url));
+      nationChannels = [...favorites, ...others];
     }
 
     setChannels(nationChannels);
