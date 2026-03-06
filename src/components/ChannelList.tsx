@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, Filter, PlayCircle, Globe, ChevronLeft, Star } from 'lucide-react';
 import { Channel, Nation } from '../types';
 import { clsx, type ClassValue } from 'clsx';
@@ -36,6 +36,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   favoritesNation
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const filteredChannels = channels.filter(channel => 
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -45,12 +46,19 @@ export const ChannelList: React.FC<ChannelListProps> = ({
     nation.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Scroll to top when nation changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [selectedNation]);
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800">
       {/* Search Header */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          {selectedNation?.id === 'favorites' ? (
+          {selectedNation ? (
             <button
               onClick={() => {
                 onSelectNation(null);
@@ -93,7 +101,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       )}
 
       {/* List Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1"
+      >
         {!selectedNation ? (
           // Nations List
           filteredNations.length === 0 ? (
