@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const DATA_URL = 'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8';
 const STORAGE_KEY = 'legacy_iptv_last_channel';
-const NATION_STORAGE_KEY = 'legacy_iptv_last_nation';
 
 export default function App() {
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
@@ -15,6 +14,7 @@ export default function App() {
   const [selectedNation, setSelectedNation] = useState<Nation | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [playingChannel, setPlayingChannel] = useState<Channel | null>(null);
   const [favoriteUrls, setFavoriteUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,19 +123,20 @@ export default function App() {
           id: n.toLowerCase().replace(/\s+/g, '-'),
           name: n
         })).sort((a, b) => a.name.localeCompare(b.name));
-        
+
         setNations(nationList);
 
-        // Restore last nation
-        const savedNation = localStorage.getItem(NATION_STORAGE_KEY);
-        if (savedNation) {
+        // Restore last playing channel and select its nation
+        const savedChannel = localStorage.getItem(STORAGE_KEY);
+        if (savedChannel) {
           try {
-            const parsed = JSON.parse(savedNation);
-            if (parsed.id === 'favorites') {
-              setSelectedNation({ id: 'favorites', name: 'Favorites' });
-            } else {
-              const activeNation = nationList.find(n => n.id === parsed.id) || null;
-              if (activeNation) setSelectedNation(activeNation);
+            const last = JSON.parse(savedChannel);
+            const found = parsedChannels.find(c => c.url === last.url);
+            if (found) {
+              setPlayingChannel(found);
+              setSelectedChannel(found);
+              const nation = nationList.find(n => n.name === found.nation) || null;
+              if (nation) setSelectedNation(nation);
             }
           } catch (e) {}
         }
@@ -190,11 +191,11 @@ export default function App() {
 
   const handleSelectNation = (nation: Nation) => {
     setSelectedNation(nation);
-    localStorage.setItem(NATION_STORAGE_KEY, JSON.stringify(nation));
   };
 
   const handleSelectChannel = (channel: Channel) => {
-    setSelectedChannel(prev => {
+    setSelectedChannel(channel);
+    setPlayingChannel(prev => {
       if (prev?.url === channel.url) return prev;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(channel));
       return channel;
@@ -298,10 +299,10 @@ export default function App() {
             </button>
             <div className="hidden md:block border-l border-zinc-200 dark:border-zinc-800 pl-4 ml-2">
               <h1 className="text-lg font-bold text-zinc-900 dark:text-white truncate max-w-[200px] lg:max-w-md">
-                {selectedChannel ? selectedChannel.name : 'Select a Station'}
+                {playingChannel ? playingChannel.name : 'Select a Station'}
               </h1>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-                {selectedChannel ? selectedChannel.category : 'No channel selected'}
+                {playingChannel ? playingChannel.category : 'No channel selected'}
               </p>
             </div>
           </div>
@@ -321,11 +322,11 @@ export default function App() {
 
         {/* Player Section */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
-          {selectedChannel ? (
+          {playingChannel ? (
             <div className="max-w-6xl mx-auto space-y-6">
-              <VideoPlayer 
-                url={selectedChannel.url} 
-                title={selectedChannel.name} 
+              <VideoPlayer
+                url={playingChannel.url}
+                title={playingChannel.name}
               />
               
               <motion.div 
@@ -342,21 +343,21 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Station Name</label>
-                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{selectedChannel.name}</p>
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{playingChannel.name}</p>
                       </div>
                       <div>
                         <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Category</label>
-                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{selectedChannel.category}</p>
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{playingChannel.category}</p>
                       </div>
                     </div>
                     <div>
                       <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Stream URL</label>
                       <div className="flex items-center gap-2">
                         <code className="text-[10px] bg-zinc-100 dark:bg-black/50 p-2 rounded border border-zinc-200 dark:border-zinc-800 flex-1 truncate text-zinc-600 dark:text-zinc-400">
-                          {selectedChannel.url}
+                          {playingChannel.url}
                         </code>
                         <a 
-                          href={selectedChannel.url} 
+                          href={playingChannel.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"

@@ -69,6 +69,12 @@ export const ChannelList: React.FC<ChannelListProps> = ({
         </div>
       </div>
 
+      {selectedNation && (
+        <div className="px-4 pb-2">
+          <h2 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest truncate">{selectedNation.name}</h2>
+        </div>
+      )}
+
       {/* List Content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
         {!selectedNation ? (
