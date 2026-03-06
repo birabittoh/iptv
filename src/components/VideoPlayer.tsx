@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { Play, Pause, Volume2, VolumeX, Maximize, Loader2, AlertCircle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -109,21 +109,57 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
     };
   }, [url]);
 
-  const togglePlay = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
+    if (!document.fullscreenElement) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      }
     } else {
-      videoRef.current.play();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
-    setIsPlaying(!isPlaying);
-  };
+  }, []);
 
-  const toggleMute = () => {
+  const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  };
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current.pause();
+    }
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT') return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [togglePlay, toggleMute, toggleFullscreen]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -132,13 +168,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
       videoRef.current.volume = val;
       videoRef.current.muted = val === 0;
       setIsMuted(val === 0);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen();
     }
   };
 
@@ -153,6 +182,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
         ref={videoRef}
         className="w-full h-full object-contain cursor-pointer"
         onClick={togglePlay}
+        onDoubleClick={toggleFullscreen}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         playsInline
@@ -190,12 +220,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
       >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button onClick={togglePlay} className="text-white hover:text-emerald-400 transition-colors">
+            <button onClick={toggleFullscreen} className="text-white hover:text-emerald-400 transition-colors" title="Fullscreen (F)">
+              <Maximize className="w-6 h-6" />
+            </button>
+
+            <button onClick={togglePlay} className="text-white hover:text-emerald-400 transition-colors" title="Play/Pause (Space)">
               {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current" />}
             </button>
             
             <div className="flex items-center gap-2 group/volume">
-              <button onClick={toggleMute} className="text-white hover:text-emerald-400 transition-colors">
+              <button onClick={toggleMute} className="text-white hover:text-emerald-400 transition-colors" title="Mute (M)">
                 {isMuted || volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
               </button>
               <input
@@ -208,15 +242,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
                 className="w-24 h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
             </div>
-
-            <div className="text-white font-medium truncate max-w-[200px] md:max-w-md">
-              {title}
-            </div>
           </div>
 
-          <button onClick={toggleFullscreen} className="text-white hover:text-emerald-400 transition-colors">
-            <Maximize className="w-6 h-6" />
-          </button>
+          <div className="text-white font-medium truncate max-w-[200px] md:max-w-md text-right">
+            {title}
+          </div>
         </div>
       </div>
     </div>

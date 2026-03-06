@@ -1,20 +1,27 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Channel, ChannelGroup } from './types';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Channel, ChannelGroup, Nation } from './types';
 import { ChannelList } from './components/ChannelList';
 import { VideoPlayer } from './components/VideoPlayer';
-import { Menu, X, Info, Github, ExternalLink, AlertTriangle, Loader2 } from 'lucide-react';
+import { Menu, X, Info, Github, ExternalLink, AlertTriangle, Loader2, Globe, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const DATA_URL = 'https://raw.githubusercontent.com/Free-TV/IPTV/refs/heads/master/lists/italy.md';
+const DATA_URL = 'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8';
 const STORAGE_KEY = 'legacy_iptv_last_channel';
+const NATION_STORAGE_KEY = 'legacy_iptv_last_nation';
 
 export default function App() {
-  const [groups, setGroups] = useState<ChannelGroup[]>([]);
+  const [allChannels, setAllChannels] = useState<Channel[]>([]);
+  const [nations, setNations] = useState<Nation[]>([]);
+  const [selectedNation, setSelectedNation] = useState<Nation | null>(null);
+  const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [favoriteUrls, setFavoriteUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+
+  const FAVORITES_STORAGE_KEY = 'legacy_iptv_favorites';
 
   // Responsive check
   useEffect(() => {
@@ -29,72 +36,75 @@ export default function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const parseMarkdown = useCallback((text: string): ChannelGroup[] => {
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (savedFavorites) {
+      try {
+        setFavoriteUrls(JSON.parse(savedFavorites));
+      } catch (e) {}
+    }
+  }, []);
+
+  const toggleFavorite = useCallback((url: string) => {
+    setFavoriteUrls(prev => {
+      const newFavorites = prev.includes(url)
+        ? prev.filter(u => u !== url)
+        : [...prev, url];
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(newFavorites));
+      return newFavorites;
+    });
+  }, []);
+
+  const parseM3U8 = useCallback((text: string): Channel[] => {
     const lines = text.split('\n');
-    const groups: ChannelGroup[] = [];
-    let currentCategory = 'General';
-    let currentChannels: Channel[] = [];
+    const channels: Channel[] = [];
+    let currentChannel: Partial<Channel> = {};
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
       
-      // Category headers
-      const h2Match = trimmedLine.match(/^<h2>(.*?)<\/h2>$/i);
-      if (trimmedLine.startsWith('## ') || h2Match) {
-        if (currentChannels.length > 0) {
-          groups.push({ category: currentCategory, channels: currentChannels });
-        }
-        currentCategory = h2Match ? h2Match[1].trim() : trimmedLine.replace(/^##\s+/, '').trim();
-        currentChannels = [];
-      } 
-      // Table rows: | # | Channel | Link | Logo | EPG id |
-      else if (trimmedLine.startsWith('|') && !trimmedLine.includes('---') && !trimmedLine.toLowerCase().includes('channel')) {
-        const parts = trimmedLine.split('|').map(p => p.trim()).filter(p => p !== '');
-        if (parts.length >= 3) {
-          // parts[0] is the number/id, parts[1] is the name, parts[2] is the link, parts[3] is the logo
-          let name = parts[1] || '';
-          name = name.replace(/\[(.*?)\]\(.*?\)/, '$1'); // Extract name from markdown link if present
-          
-          let logo;
-          if (parts[3]) {
-            const logoMatch = parts[3].match(/src="(.*?)"/) || parts[3].match(/\((.*?)\)/);
-            logo = logoMatch ? logoMatch[1] : undefined;
-          }
+      if (trimmedLine.startsWith('#EXTINF:')) {
+        // Parse metadata
+        // Example: #EXTINF:-1 tvg-id="" tvg-name="1HD Music Television" tvg-logo="https://i.imgur.com/kHhX2kH.png" group-title="Music",1HD Music Television
+        
+        const logoMatch = trimmedLine.match(/tvg-logo="(.*?)"/);
+        const groupMatch = trimmedLine.match(/group-title="(.*?)"/);
+        const nameMatch = trimmedLine.split(',').pop(); // Get everything after the last comma
 
-          const urlMatch = parts[2]?.match(/\((.*?)\)/) || [null, parts[2]];
-          const url = urlMatch[1] || parts[2];
-
-          if (url && url.startsWith('http')) {
-            currentChannels.push({
-              id: `ch-${index}`,
-              name,
-              url,
-              category: currentCategory,
-              logo: logo?.startsWith('http') ? logo : undefined
-            });
+        // Extract nation from group-title if it exists (usually format is "Nation;Category" or just "Nation")
+        let category = 'General';
+        let nation = 'Unknown';
+        
+        if (groupMatch && groupMatch[1]) {
+          const parts = groupMatch[1].split(';');
+          if (parts.length > 1) {
+            nation = parts[0].trim();
+            category = parts[1].trim();
+          } else {
+            nation = parts[0].trim();
           }
         }
-      }
-      // List items: * [Name](URL)
-      else if (trimmedLine.startsWith('* [') || trimmedLine.startsWith('- [')) {
-        const match = trimmedLine.match(/[*-]\s\[(.*?)\]\((.*?)\)/);
-        if (match) {
-          const [, name, url] = match;
-          currentChannels.push({
-            id: `ch-${index}`,
-            name,
-            url,
-            category: currentCategory
-          });
+
+        currentChannel = {
+          id: `ch-${index}`,
+          name: nameMatch ? nameMatch.trim() : 'Unknown Channel',
+          logo: logoMatch ? logoMatch[1] : undefined,
+          category,
+          nation
+        };
+      } else if (trimmedLine && !trimmedLine.startsWith('#')) {
+        // This is the URL
+        if (currentChannel.name) {
+          channels.push({
+            ...currentChannel,
+            url: trimmedLine
+          } as Channel);
+          currentChannel = {};
         }
       }
     });
 
-    if (currentChannels.length > 0) {
-      groups.push({ category: currentCategory, channels: currentChannels });
-    }
-
-    return groups;
+    return channels;
   }, []);
 
   useEffect(() => {
@@ -104,26 +114,32 @@ export default function App() {
         const response = await fetch(DATA_URL);
         if (!response.ok) throw new Error('Failed to fetch channel list');
         const text = await response.text();
-        const parsedGroups = parseMarkdown(text);
-        setGroups(parsedGroups);
+        const parsedChannels = parseM3U8(text);
+        setAllChannels(parsedChannels);
 
-        // Restore last channel
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
+        // Extract unique nations
+        const uniqueNations = Array.from(new Set(parsedChannels.map(c => c.nation).filter(Boolean))) as string[];
+        const nationList: Nation[] = uniqueNations.map(n => ({
+          id: n.toLowerCase().replace(/\s+/g, '-'),
+          name: n
+        })).sort((a, b) => a.name.localeCompare(b.name));
+        
+        setNations(nationList);
+
+        // Restore last nation
+        const savedNation = localStorage.getItem(NATION_STORAGE_KEY);
+        let activeNation = null;
+        if (savedNation) {
           try {
-            const lastChannel = JSON.parse(saved);
-            // Verify it still exists in the new list
-            const found = parsedGroups.flatMap(g => g.channels).find(c => c.url === lastChannel.url);
-            if (found) setSelectedChannel(found);
-            else if (parsedGroups.length > 0 && parsedGroups[0].channels.length > 0) {
-              setSelectedChannel(parsedGroups[0].channels[0]);
-            }
-          } catch (e) {
-            console.error('Error parsing saved channel', e);
-          }
-        } else if (parsedGroups.length > 0 && parsedGroups[0].channels.length > 0) {
-          setSelectedChannel(parsedGroups[0].channels[0]);
+            const parsed = JSON.parse(savedNation);
+            activeNation = nationList.find(n => n.id === parsed.id) || null;
+          } catch (e) {}
         }
+        
+        if (activeNation) {
+          setSelectedNation(activeNation);
+        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
@@ -132,7 +148,51 @@ export default function App() {
     };
 
     fetchData();
-  }, [parseMarkdown]);
+  }, [parseM3U8]);
+
+  // Update channels when nation changes
+  useEffect(() => {
+    if (!selectedNation) {
+      setChannels([]);
+      return;
+    }
+
+    let nationChannels: Channel[] = [];
+    if (selectedNation.id === 'favorites') {
+      // Map favoriteUrls to actual channel objects, keeping the order they were added
+      nationChannels = favoriteUrls
+        .map(url => allChannels.find(c => c.url === url))
+        .filter((c): c is Channel => c !== undefined);
+    } else {
+      nationChannels = allChannels.filter(c => c.nation === selectedNation.name);
+    }
+    
+    setChannels(nationChannels);
+
+    // Restore last channel if it belongs to this nation
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const lastChannel = JSON.parse(saved);
+        const found = nationChannels.find(c => c.url === lastChannel.url);
+        if (found) {
+          setSelectedChannel(found);
+        } else {
+          setSelectedChannel(null);
+        }
+      } catch (e) {
+        console.error('Error parsing saved channel', e);
+      }
+    } else {
+      setSelectedChannel(null);
+    }
+  }, [selectedNation, allChannels, favoriteUrls]);
+
+  const handleSelectNation = (nation: Nation) => {
+    setSelectedNation(nation);
+    localStorage.setItem(NATION_STORAGE_KEY, JSON.stringify(nation));
+    setSelectedChannel(null);
+  };
 
   const handleSelectChannel = (channel: Channel) => {
     setSelectedChannel(channel);
@@ -178,6 +238,11 @@ export default function App() {
     );
   }
 
+  const displayNations = useMemo(() => {
+    const favoritesNation: Nation = { id: 'favorites', name: 'Favorites' };
+    return [favoritesNation, ...nations];
+  }, [nations]);
+
   return (
     <div className="flex h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-zinc-200 overflow-hidden font-sans">
       {/* Sidebar Overlay for Mobile */}
@@ -207,9 +272,14 @@ export default function App() {
         )}
       >
         <ChannelList 
-          groups={groups} 
+          nations={displayNations}
+          selectedNation={selectedNation}
+          onSelectNation={handleSelectNation}
+          channels={channels} 
           selectedChannel={selectedChannel} 
           onSelectChannel={handleSelectChannel} 
+          favoriteUrls={favoriteUrls}
+          onToggleFavorite={toggleFavorite}
         />
       </motion.aside>
 
@@ -224,7 +294,15 @@ export default function App() {
             >
               {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            <div className="hidden md:block">
+            <button
+              onClick={() => setSelectedNation(null)}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center gap-2"
+              title="Change Nation"
+            >
+              <Globe className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">{selectedNation?.name}</span>
+            </button>
+            <div className="hidden md:block border-l border-zinc-200 dark:border-zinc-800 pl-4 ml-2">
               <h1 className="text-lg font-bold text-zinc-900 dark:text-white truncate max-w-[200px] lg:max-w-md">
                 {selectedChannel ? selectedChannel.name : 'Select a Station'}
               </h1>
