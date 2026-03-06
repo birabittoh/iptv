@@ -13,7 +13,36 @@ interface VideoPlayerProps {
   title: string;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
+function getTwitchChannel(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'www.twitch.tv' || parsed.hostname === 'twitch.tv') {
+      const channel = parsed.pathname.replace(/^\//, '').split('/')[0];
+      return channel || null;
+    }
+  } catch {}
+  return null;
+}
+
+const TwitchPlayer: React.FC<{ channel: string; title: string }> = ({ channel, title }) => {
+  const parent = window.location.hostname;
+  const src = `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${parent}&autoplay=true`;
+
+  return (
+    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+      <iframe
+        src={src}
+        title={title}
+        allowFullScreen
+        className="w-full h-full"
+        allow="autoplay; fullscreen"
+        style={{ border: 'none' }}
+      />
+    </div>
+  );
+};
+
+const HlsPlayer: React.FC<{ url: string; title: string }> = ({ url, title }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -65,7 +94,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsLoading(false);
         video.play().catch(() => {
-          // Auto-play might be blocked
           setIsPlaying(false);
         });
       });
@@ -88,7 +116,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari/iOS/Some Smart TVs)
       video.src = url;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
@@ -112,13 +139,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   const toggleFullscreen = useCallback(() => {
     if (!videoRef.current) return;
     if (!document.fullscreenElement) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen();
-      }
+      videoRef.current.requestFullscreen?.();
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      document.exitFullscreen?.();
     }
   }, []);
 
@@ -140,7 +163,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT') return;
-
       switch (e.key.toLowerCase()) {
         case ' ':
           e.preventDefault();
@@ -156,7 +178,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, toggleMute, toggleFullscreen]);
@@ -191,7 +212,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
         playsInline
       />
 
-      {/* Loading Overlay */}
       {isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
           <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
@@ -199,13 +219,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
         </div>
       )}
 
-      {/* Error Overlay */}
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-900 z-20 p-6 text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
           <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Playback Error</h3>
           <p className="text-zinc-600 dark:text-zinc-400 max-w-md">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-6 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
           >
@@ -214,8 +233,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
         </div>
       )}
 
-      {/* Controls Overlay */}
-      <div 
+      <div
         className={cn(
           "absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300",
           showControls ? "opacity-100" : "opacity-0"
@@ -226,11 +244,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
             <button onClick={toggleFullscreen} className="text-white hover:text-emerald-400 transition-colors" title="Fullscreen (F)">
               <Maximize className="w-6 h-6" />
             </button>
-
             <button onClick={togglePlay} className="text-white hover:text-emerald-400 transition-colors" title="Play/Pause (Space)">
               {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current" />}
             </button>
-            
             <div className="flex items-center gap-2 group/volume">
               <button onClick={toggleMute} className="text-white hover:text-emerald-400 transition-colors" title="Mute (M)">
                 {isMuted || volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
@@ -246,7 +262,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
               />
             </div>
           </div>
-
           <div className="text-white font-medium truncate max-w-[200px] md:max-w-md text-right">
             {title}
           </div>
@@ -254,4 +269,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
       </div>
     </div>
   );
+};
+
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
+  const twitchChannel = getTwitchChannel(url);
+
+  if (twitchChannel) {
+    return <TwitchPlayer channel={twitchChannel} title={title} />;
+  }
+
+  return <HlsPlayer url={url} title={title} />;
 };
