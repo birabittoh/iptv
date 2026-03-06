@@ -172,15 +172,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   };
 
   return (
-    <div 
-      className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group"
+    <div
+      className={cn(
+        "relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group",
+        !showControls && "cursor-none"
+      )}
       onMouseMove={handleUserActivity}
       onClick={handleUserActivity}
       onTouchStart={handleUserActivity}
     >
       <video
         ref={videoRef}
-        className="w-full h-full object-contain cursor-pointer"
+        className="w-full h-full object-contain"
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
         onPlay={() => setIsPlaying(true)}

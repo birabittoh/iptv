@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Tv, Filter, PlayCircle, Globe, ChevronLeft, Star } from 'lucide-react';
+import { Search, Filter, PlayCircle, Globe, ChevronLeft, Star } from 'lucide-react';
 import { Channel, Nation } from '../types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -42,34 +42,30 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800">
       {/* Search Header */}
-      <div className="p-4 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <Tv className="w-6 h-6 text-emerald-500" />
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight italic serif">IPTV</h2>
-        </div>
-        
-        {selectedNation && (
-          <button 
-            onClick={() => {
-              onSelectNation(null);
-              setSearchQuery('');
-            }}
-            className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors mb-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-        )}
-
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors" />
-          <input
-            type="text"
-            placeholder={selectedNation ? "Search channels..." : "Search regions..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
-          />
+      <div className="p-4">
+        <div className="flex items-center gap-2">
+          {selectedNation && (
+            <button
+              onClick={() => {
+                onSelectNation(null);
+                setSearchQuery('');
+              }}
+              className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-emerald-500/50 transition-all"
+              title="Back"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div className="relative group flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors" />
+            <input
+              type="text"
+              placeholder={selectedNation ? "Search channels..." : "Search regions..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+            />
+          </div>
         </div>
       </div>
 

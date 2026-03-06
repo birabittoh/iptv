@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Channel, ChannelGroup, Nation } from './types';
 import { ChannelList } from './components/ChannelList';
 import { VideoPlayer } from './components/VideoPlayer';
-import { Menu, X, Info, Github, ExternalLink, AlertTriangle, Loader2, Globe, Search } from 'lucide-react';
+import { Menu, X, Info, Github, ExternalLink, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const DATA_URL = 'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8';
@@ -128,16 +128,16 @@ export default function App() {
 
         // Restore last nation
         const savedNation = localStorage.getItem(NATION_STORAGE_KEY);
-        let activeNation = null;
         if (savedNation) {
           try {
             const parsed = JSON.parse(savedNation);
-            activeNation = nationList.find(n => n.id === parsed.id) || null;
+            if (parsed.id === 'favorites') {
+              setSelectedNation({ id: 'favorites', name: 'Favorites' });
+            } else {
+              const activeNation = nationList.find(n => n.id === parsed.id) || null;
+              if (activeNation) setSelectedNation(activeNation);
+            }
           } catch (e) {}
-        }
-        
-        if (activeNation) {
-          setSelectedNation(activeNation);
         }
 
       } catch (err) {
@@ -169,36 +169,43 @@ export default function App() {
     
     setChannels(nationChannels);
 
-    // Restore last channel if it belongs to this nation
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const lastChannel = JSON.parse(saved);
-        const found = nationChannels.find(c => c.url === lastChannel.url);
-        if (found) {
-          setSelectedChannel(found);
-        } else {
-          setSelectedChannel(null);
-        }
-      } catch (e) {
-        console.error('Error parsing saved channel', e);
+    // Keep current channel if it exists in the new nation's channel list
+    setSelectedChannel(prev => {
+      if (prev && nationChannels.find(c => c.url === prev.url)) {
+        return prev;
       }
-    } else {
-      setSelectedChannel(null);
-    }
+      // Otherwise restore last saved channel if it belongs to this nation
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const lastChannel = JSON.parse(saved);
+          return nationChannels.find(c => c.url === lastChannel.url) ?? null;
+        } catch (e) {
+          console.error('Error parsing saved channel', e);
+        }
+      }
+      return null;
+    });
   }, [selectedNation, allChannels, favoriteUrls]);
 
   const handleSelectNation = (nation: Nation) => {
     setSelectedNation(nation);
     localStorage.setItem(NATION_STORAGE_KEY, JSON.stringify(nation));
-    setSelectedChannel(null);
   };
 
   const handleSelectChannel = (channel: Channel) => {
-    setSelectedChannel(channel);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(channel));
+    setSelectedChannel(prev => {
+      if (prev?.url === channel.url) return prev;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(channel));
+      return channel;
+    });
     if (isMobile) setIsSidebarOpen(false);
   };
+
+  const displayNations = useMemo(() => {
+    const favoritesNation: Nation = { id: 'favorites', name: 'Favorites' };
+    return [favoritesNation, ...nations];
+  }, [nations]);
 
   if (isLoading) {
     return (
@@ -237,11 +244,6 @@ export default function App() {
       </div>
     );
   }
-
-  const displayNations = useMemo(() => {
-    const favoritesNation: Nation = { id: 'favorites', name: 'Favorites' };
-    return [favoritesNation, ...nations];
-  }, [nations]);
 
   return (
     <div className="flex h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-zinc-200 overflow-hidden font-sans">
@@ -293,14 +295,6 @@ export default function App() {
               className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
             >
               {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-            <button
-              onClick={() => setSelectedNation(null)}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center gap-2"
-              title="Change Nation"
-            >
-              <Globe className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{selectedNation?.name}</span>
             </button>
             <div className="hidden md:block border-l border-zinc-200 dark:border-zinc-800 pl-4 ml-2">
               <h1 className="text-lg font-bold text-zinc-900 dark:text-white truncate max-w-[200px] lg:max-w-md">
