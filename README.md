@@ -1,11 +1,13 @@
-<div align="center">
+# IPTV
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+A modern web application to watch Italian DVB-T and Satellite television channels directly in your browser.
 
-  <h1>Built with AI Studio</h2>
+## Features
+- Live streaming of Italian TV channels
+- Categorized channel lists (National DVB-T, Satellite, Regional, etc.)
+- Search functionality
+- Responsive design for desktop and mobile
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## License
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

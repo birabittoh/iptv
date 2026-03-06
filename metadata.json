@@ -1,0 +1,5 @@
+{
+  "name": "Legacy IPTV Player",
+  "description": "A compatibility-focused IPTV player for older devices and Smart TVs, featuring free Italian livestreams.",
+  "requestFramePermissions": []
+}
