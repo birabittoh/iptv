@@ -142,7 +142,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex flex-col items-center justify-center p-6 text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -152,7 +152,7 @@ export default function App() {
             <div className="w-24 h-24 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight italic serif">IPTV</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight italic serif">IPTV</h1>
             <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">Initializing compatibility layer...</p>
           </div>
         </motion.div>
@@ -162,11 +162,11 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center shadow-2xl">
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center shadow-2xl">
           <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-white mb-2">Connection Error</h2>
-          <p className="text-zinc-400 mb-8">{error}</p>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Connection Error</h2>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-8">{error}</p>
           <button 
             onClick={() => window.location.reload()}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/20"
@@ -179,7 +179,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-black text-zinc-200 overflow-hidden font-sans">
+    <div className="flex h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-zinc-200 overflow-hidden font-sans">
       {/* Sidebar Overlay for Mobile */}
       <AnimatePresence>
         {isMobile && isSidebarOpen && (
@@ -188,7 +188,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-zinc-900/20 dark:bg-black/80 backdrop-blur-sm z-40"
           />
         )}
       </AnimatePresence>
@@ -216,16 +216,16 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative">
         {/* Header */}
-        <header className="h-16 border-b border-zinc-800 flex items-center justify-between px-4 md:px-8 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-30">
+        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 md:px-8 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
             >
               {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
             <div className="hidden md:block">
-              <h1 className="text-lg font-bold text-white truncate max-w-[200px] lg:max-w-md">
+              <h1 className="text-lg font-bold text-zinc-900 dark:text-white truncate max-w-[200px] lg:max-w-md">
                 {selectedChannel ? selectedChannel.name : 'Select a Station'}
               </h1>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
@@ -239,7 +239,7 @@ export default function App() {
               href="https://github.com/Free-TV/IPTV" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="p-2 text-zinc-500 hover:text-white transition-colors"
+              className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
               title="Source Repository"
             >
               <Github className="w-5 h-5" />
@@ -264,30 +264,30 @@ export default function App() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Info className="w-5 h-5 text-emerald-500" />
-                    <h3 className="text-lg font-bold text-white">Stream Information</h3>
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Stream Information</h3>
                   </div>
-                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
+                  <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Station Name</label>
-                        <p className="text-sm font-medium text-zinc-200">{selectedChannel.name}</p>
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{selectedChannel.name}</p>
                       </div>
                       <div>
                         <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Category</label>
-                        <p className="text-sm font-medium text-zinc-200">{selectedChannel.category}</p>
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{selectedChannel.category}</p>
                       </div>
                     </div>
                     <div>
                       <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">Stream URL</label>
                       <div className="flex items-center gap-2">
-                        <code className="text-[10px] bg-black/50 p-2 rounded border border-zinc-800 flex-1 truncate text-zinc-400">
+                        <code className="text-[10px] bg-zinc-100 dark:bg-black/50 p-2 rounded border border-zinc-200 dark:border-zinc-800 flex-1 truncate text-zinc-600 dark:text-zinc-400">
                           {selectedChannel.url}
                         </code>
                         <a 
                           href={selectedChannel.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                          className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -299,11 +299,11 @@ export default function App() {
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-12 space-y-6">
-              <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 shadow-inner">
-                <Tv className="w-12 h-12 text-zinc-700" />
+              <div className="w-24 h-24 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-800 shadow-inner">
+                <Tv className="w-12 h-12 text-zinc-400 dark:text-zinc-700" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-white">No Station Selected</h2>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">No Station Selected</h2>
                 <p className="text-zinc-500 max-w-xs mx-auto">Choose a channel from the sidebar to start watching live Italian television.</p>
               </div>
             </div>

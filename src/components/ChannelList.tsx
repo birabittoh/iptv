@@ -33,12 +33,12 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
   })).filter(group => group.channels.length > 0);
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 border-r border-zinc-800">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800">
       {/* Search Header */}
       <div className="p-4 space-y-4">
         <div className="flex items-center gap-3 mb-2">
           <Tv className="w-6 h-6 text-emerald-500" />
-          <h2 className="text-xl font-bold text-white tracking-tight italic serif">IPTV</h2>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight italic serif">IPTV</h2>
         </div>
         
         <div className="relative group">
@@ -48,7 +48,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
             placeholder="Search channels..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+            className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
           />
         </div>
       </div>
@@ -57,15 +57,15 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
         {filteredGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center opacity-50">
-            <Filter className="w-12 h-12 mb-2 text-zinc-600" />
-            <p className="text-sm text-zinc-400">No channels found</p>
+            <Filter className="w-12 h-12 mb-2 text-zinc-300 dark:text-zinc-600" />
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">No channels found</p>
           </div>
         ) : (
           filteredGroups.map((group) => (
             <div key={group.category} className="space-y-1">
               <button
                 onClick={() => toggleGroup(group.category)}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-zinc-800/50 transition-colors group"
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors group"
               >
                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                   <ChevronRight className={cn(
@@ -74,7 +74,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
                   )} />
                   {group.category}
                 </span>
-                <span className="text-[10px] font-mono text-zinc-600 group-hover:text-emerald-500 transition-colors">
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-600 group-hover:text-emerald-500 transition-colors">
                   {group.channels.length}
                 </span>
               </button>
@@ -88,8 +88,8 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
                       className={cn(
                         "w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all group relative overflow-hidden",
                         selectedChannel?.id === channel.id 
-                          ? "bg-emerald-600/10 text-emerald-400 border border-emerald-500/20" 
-                          : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200"
+                          ? "bg-emerald-50 dark:bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
+                          : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-zinc-200"
                       )}
                     >
                       {selectedChannel?.id === channel.id && (
@@ -97,7 +97,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({ groups, selectedChanne
                       )}
                       
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center bg-zinc-800 border border-zinc-700 group-hover:border-emerald-500/30 transition-colors",
+                        "flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 group-hover:border-emerald-500/30 transition-colors",
                         selectedChannel?.id === channel.id && "border-emerald-500/50"
                       )}>
                         {channel.logo ? (

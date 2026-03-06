@@ -20,7 +20,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showControls, setShowControls] = useState(true);
   const hlsRef = useRef<Hls | null>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUserActivity = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (videoRef.current && !videoRef.current.paused) {
+        setShowControls(false);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    handleUserActivity();
+    return () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [isPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -122,10 +143,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   };
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group">
+    <div 
+      className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group"
+      onMouseMove={handleUserActivity}
+      onClick={handleUserActivity}
+      onTouchStart={handleUserActivity}
+    >
       <video
         ref={videoRef}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain cursor-pointer"
+        onClick={togglePlay}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         playsInline
@@ -141,10 +168,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
 
       {/* Error Overlay */}
       {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-20 p-6 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-900 z-20 p-6 text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">Playback Error</h3>
-          <p className="text-zinc-400 max-w-md">{error}</p>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Playback Error</h3>
+          <p className="text-zinc-600 dark:text-zinc-400 max-w-md">{error}</p>
           <button 
             onClick={() => window.location.reload()}
             className="mt-6 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
@@ -155,7 +182,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
       )}
 
       {/* Controls Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <div 
+        className={cn(
+          "absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300",
+          showControls ? "opacity-100" : "opacity-0"
+        )}
+      >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button onClick={togglePlay} className="text-white hover:text-emerald-400 transition-colors">
