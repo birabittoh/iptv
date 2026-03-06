@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
-import { Play, Pause, Volume2, VolumeX, Maximize, Loader2, AlertCircle } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,6 +12,64 @@ interface VideoPlayerProps {
   url: string;
   title: string;
 }
+
+type YouTubeUrl =
+  | { type: 'embed'; videoId: string }
+  | { type: 'channel'; url: string };
+
+function getYouTubeInfo(url: string): YouTubeUrl | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== 'www.youtube.com' && parsed.hostname !== 'youtube.com') return null;
+
+    const videoId = parsed.searchParams.get('v');
+    if (videoId) return { type: 'embed', videoId };
+
+    // /@handle/live, /c/name/live, /user/name/live
+    if (/^\/(c\/|user\/|@)/.test(parsed.pathname) && parsed.pathname.endsWith('/live')) {
+      return { type: 'channel', url };
+    }
+  } catch {}
+  return null;
+}
+
+const YouTubePlayer: React.FC<{ info: YouTubeUrl; title: string }> = ({ info, title }) => {
+  if (info.type === 'embed') {
+    return (
+      <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+        <iframe
+          src={`https://www.youtube.com/embed/${info.videoId}?autoplay=1`}
+          title={title}
+          allowFullScreen
+          className="w-full h-full"
+          allow="autoplay; fullscreen; encrypted-media"
+          style={{ border: 'none' }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full aspect-video bg-zinc-900 rounded-xl overflow-hidden shadow-2xl flex flex-col items-center justify-center gap-4 text-center p-8">
+      <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="white" className="w-8 h-8"><path d="M10 15.5v-7l6 3.5-6 3.5z"/><path d="M21.58 7.19a2.74 2.74 0 0 0-1.93-1.94C18 5 12 5 12 5s-6 0-7.65.25a2.74 2.74 0 0 0-1.93 1.94A28.85 28.85 0 0 0 2 12a28.85 28.85 0 0 0 .42 4.81 2.74 2.74 0 0 0 1.93 1.94C6 19 12 19 12 19s6 0 7.65-.25a2.74 2.74 0 0 0 1.93-1.94A28.85 28.85 0 0 0 22 12a28.85 28.85 0 0 0-.42-4.81z"/></svg>
+      </div>
+      <div>
+        <p className="text-white font-semibold text-lg">{title}</p>
+        <p className="text-zinc-400 text-sm mt-1">Live channel streams must be watched on YouTube directly.</p>
+      </div>
+      <a
+        href={info.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-colors"
+      >
+        <ExternalLink className="w-4 h-4" />
+        Watch on YouTube
+      </a>
+    </div>
+  );
+};
 
 function getTwitchChannel(url: string): string | null {
   try {
@@ -272,11 +330,11 @@ const HlsPlayer: React.FC<{ url: string; title: string }> = ({ url, title }) => 
 };
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
-  const twitchChannel = getTwitchChannel(url);
+  const youtubeInfo = getYouTubeInfo(url);
+  if (youtubeInfo) return <YouTubePlayer info={youtubeInfo} title={title} />;
 
-  if (twitchChannel) {
-    return <TwitchPlayer channel={twitchChannel} title={title} />;
-  }
+  const twitchChannel = getTwitchChannel(url);
+  if (twitchChannel) return <TwitchPlayer channel={twitchChannel} title={title} />;
 
   return <HlsPlayer url={url} title={title} />;
 };
