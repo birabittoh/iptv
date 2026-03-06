@@ -17,6 +17,9 @@ interface ChannelListProps {
   onSelectChannel: (channel: Channel) => void;
   favoriteUrls: string[];
   onToggleFavorite: (url: string) => void;
+  favoriteNationIds: string[];
+  onToggleFavoriteNation: (id: string) => void;
+  favoritesNation: Nation;
 }
 
 export const ChannelList: React.FC<ChannelListProps> = ({ 
@@ -27,7 +30,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   selectedChannel, 
   onSelectChannel,
   favoriteUrls,
-  onToggleFavorite
+  onToggleFavorite,
+  favoriteNationIds,
+  onToggleFavoriteNation,
+  favoritesNation
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -44,7 +50,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       {/* Search Header */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          {selectedNation && (
+          {selectedNation?.id === 'favorites' ? (
             <button
               onClick={() => {
                 onSelectNation(null);
@@ -54,6 +60,17 @@ export const ChannelList: React.FC<ChannelListProps> = ({
               title="Back"
             >
               <ChevronLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onSelectNation(favoritesNation);
+                setSearchQuery('');
+              }}
+              className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-emerald-500/50 transition-all"
+              title="Favorites"
+            >
+              <Star className="w-4 h-4" />
             </button>
           )}
           <div className="relative group flex-1">
@@ -96,16 +113,27 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                   className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all group relative overflow-hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-zinc-200"
                 >
                   <div className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 group-hover:border-emerald-500/30 transition-colors">
-                    {nation.id === 'favorites' ? (
-                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    ) : (
-                      <Globe className="w-4 h-4 opacity-50" />
-                    )}
+                    <Globe className="w-4 h-4 opacity-50" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate leading-tight">
                       {nation.name}
                     </div>
+                  </div>
+
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavoriteNation(nation.id);
+                    }}
+                    className="p-1.5 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex-shrink-0"
+                  >
+                    <Star
+                      className={cn(
+                        "w-4 h-4 transition-colors",
+                        favoriteNationIds.includes(nation.id) ? "fill-amber-500 text-amber-500" : "text-zinc-400 hover:text-amber-500"
+                      )}
+                    />
                   </div>
                 </button>
               ))}

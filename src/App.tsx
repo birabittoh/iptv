@@ -16,12 +16,15 @@ export default function App() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [playingChannel, setPlayingChannel] = useState<Channel | null>(null);
   const [favoriteUrls, setFavoriteUrls] = useState<string[]>([]);
+  const [favoriteNationIds, setFavoriteNationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
   const FAVORITES_STORAGE_KEY = 'legacy_iptv_favorites';
+  const FAVORITE_NATIONS_STORAGE_KEY = 'legacy_iptv_favorite_nations';
+  const FAVORITES_NATION: Nation = { id: 'favorites', name: 'Favorites' };
 
   // Responsive check
   useEffect(() => {
@@ -43,6 +46,13 @@ export default function App() {
         setFavoriteUrls(JSON.parse(savedFavorites));
       } catch (e) {}
     }
+
+    const savedFavoriteNations = localStorage.getItem(FAVORITE_NATIONS_STORAGE_KEY);
+    if (savedFavoriteNations) {
+      try {
+        setFavoriteNationIds(JSON.parse(savedFavoriteNations));
+      } catch (e) {}
+    }
   }, []);
 
   const toggleFavorite = useCallback((url: string) => {
@@ -51,6 +61,16 @@ export default function App() {
         ? prev.filter(u => u !== url)
         : [...prev, url];
       localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(newFavorites));
+      return newFavorites;
+    });
+  }, []);
+
+  const toggleFavoriteNation = useCallback((id: string) => {
+    setFavoriteNationIds(prev => {
+      const newFavorites = prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id];
+      localStorage.setItem(FAVORITE_NATIONS_STORAGE_KEY, JSON.stringify(newFavorites));
       return newFavorites;
     });
   }, []);
@@ -204,9 +224,15 @@ export default function App() {
   };
 
   const displayNations = useMemo(() => {
-    const favoritesNation: Nation = { id: 'favorites', name: 'Favorites' };
-    return [favoritesNation, ...nations];
-  }, [nations]);
+    const sortedNations = [...nations].sort((a, b) => {
+      const aFav = favoriteNationIds.includes(a.id);
+      const bFav = favoriteNationIds.includes(b.id);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    return sortedNations;
+  }, [nations, favoriteNationIds]);
 
   if (isLoading) {
     return (
@@ -283,6 +309,9 @@ export default function App() {
           onSelectChannel={handleSelectChannel} 
           favoriteUrls={favoriteUrls}
           onToggleFavorite={toggleFavorite}
+          favoriteNationIds={favoriteNationIds}
+          onToggleFavoriteNation={toggleFavoriteNation}
+          favoritesNation={FAVORITES_NATION}
         />
       </motion.aside>
 
