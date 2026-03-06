@@ -44,14 +44,14 @@ export default function App() {
     if (savedFavorites) {
       try {
         setFavoriteUrls(JSON.parse(savedFavorites));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const savedFavoriteNations = localStorage.getItem(FAVORITE_NATIONS_STORAGE_KEY);
     if (savedFavoriteNations) {
       try {
         setFavoriteNationIds(JSON.parse(savedFavoriteNations));
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -82,11 +82,11 @@ export default function App() {
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
+
       if (trimmedLine.startsWith('#EXTINF:')) {
         // Parse metadata
         // Example: #EXTINF:-1 tvg-id="" tvg-name="1HD Music Television" tvg-logo="https://i.imgur.com/kHhX2kH.png" group-title="Music",1HD Music Television
-        
+
         const logoMatch = trimmedLine.match(/tvg-logo="(.*?)"/);
         const groupMatch = trimmedLine.match(/group-title="(.*?)"/);
         const nameMatch = trimmedLine.split(',').pop(); // Get everything after the last comma
@@ -94,7 +94,7 @@ export default function App() {
         // Extract nation from group-title if it exists (usually format is "Nation;Category" or just "Nation")
         let category = 'General';
         let nation = 'Unknown';
-        
+
         if (groupMatch && groupMatch[1]) {
           const parts = groupMatch[1].split(';');
           if (parts.length > 1) {
@@ -158,7 +158,7 @@ export default function App() {
               const nation = nationList.find(n => n.name === found.nation) || null;
               if (nation) setSelectedNation(nation);
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
       } catch (err) {
@@ -187,7 +187,7 @@ export default function App() {
     } else {
       nationChannels = allChannels.filter(c => c.nation === selectedNation.name);
     }
-    
+
     setChannels(nationChannels);
 
     // Keep current channel if it exists in the new nation's channel list
@@ -261,7 +261,7 @@ export default function App() {
           <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Connection Error</h2>
           <p className="text-zinc-600 dark:text-zinc-400 mb-8">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/20"
           >
@@ -290,7 +290,7 @@ export default function App() {
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isSidebarOpen ? (isMobile ? '85%' : '320px') : '0px',
           x: isSidebarOpen ? 0 : (isMobile ? -320 : 0),
           opacity: isSidebarOpen ? 1 : 0
@@ -300,13 +300,13 @@ export default function App() {
           !isSidebarOpen && "pointer-events-none"
         )}
       >
-        <ChannelList 
+        <ChannelList
           nations={displayNations}
           selectedNation={selectedNation}
           onSelectNation={handleSelectNation}
-          channels={channels} 
-          selectedChannel={selectedChannel} 
-          onSelectChannel={handleSelectChannel} 
+          channels={channels}
+          selectedChannel={selectedChannel}
+          onSelectChannel={handleSelectChannel}
           favoriteUrls={favoriteUrls}
           onToggleFavorite={toggleFavorite}
           favoriteNationIds={favoriteNationIds}
@@ -320,7 +320,7 @@ export default function App() {
         {/* Header */}
         <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 md:px-8 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
             >
@@ -337,9 +337,9 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <a 
-              href="https://github.com/Free-TV/IPTV" 
-              target="_blank" 
+            <a
+              href="https://github.com/Free-TV/IPTV"
+              target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
               title="Source Repository"
@@ -357,8 +357,8 @@ export default function App() {
                 url={playingChannel.url}
                 title={playingChannel.name}
               />
-              
-              <motion.div 
+
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="grid grid-cols-1 gap-6"
@@ -385,9 +385,9 @@ export default function App() {
                         <code className="text-[10px] bg-zinc-100 dark:bg-black/50 p-2 rounded border border-zinc-200 dark:border-zinc-800 flex-1 truncate text-zinc-600 dark:text-zinc-400">
                           {playingChannel.url}
                         </code>
-                        <a 
-                          href={playingChannel.url} 
-                          target="_blank" 
+                        <a
+                          href={playingChannel.url}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                         >
@@ -406,7 +406,7 @@ export default function App() {
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">No Station Selected</h2>
-                <p className="text-zinc-500 max-w-xs mx-auto">Choose a channel from the sidebar to start watching live Italian television.</p>
+                <p className="text-zinc-500 max-w-xs mx-auto">Choose a channel from the sidebar to start watching live television.</p>
               </div>
             </div>
           )}
@@ -418,19 +418,19 @@ export default function App() {
 
 function Tv({ className }: { className?: string }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+      <rect width="20" height="15" x="2" y="7" rx="2" ry="2" /><polyline points="17 2 12 7 7 2" />
     </svg>
   );
 }

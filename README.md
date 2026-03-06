@@ -1,10 +1,10 @@
 # IPTV
 
-A modern web application to watch Italian DVB-T and Satellite television channels directly in your browser.
+A modern web application to watch DVB-T and Satellite television channels directly in your browser.
 
 ## Features
-- Live streaming of Italian TV channels
-- Categorized channel lists (National DVB-T, Satellite, Regional, etc.)
+- Live streaming of TV channels
+- Categorized channel lists
 - Search functionality
 - Responsive design for desktop and mobile
 
