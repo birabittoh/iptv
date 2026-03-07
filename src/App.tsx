@@ -147,19 +147,34 @@ export default function App() {
 
         setNations(nationList);
 
-        // Restore last playing channel and select its nation
-        const savedChannel = localStorage.getItem(STORAGE_KEY);
-        if (savedChannel) {
-          try {
-            const last = JSON.parse(savedChannel);
-            const found = parsedChannels.find(c => c.url === last.url);
-            if (found) {
-              setPlayingChannel(found);
-              setSelectedChannel(found);
-              const nation = nationList.find(n => n.name === found.nation) || null;
-              if (nation) setSelectedNation(nation);
-            }
-          } catch (e) { }
+        // Restore last playing channel — URL param takes precedence over localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const stationId = urlParams.get('station');
+        let found: Channel | undefined;
+
+        if (stationId) {
+          found = parsedChannels.find(c => c.id === stationId);
+        }
+
+        if (!found) {
+          const savedChannel = localStorage.getItem(STORAGE_KEY);
+          if (savedChannel) {
+            try {
+              const last = JSON.parse(savedChannel);
+              found = parsedChannels.find(c => c.url === last.url);
+            } catch (e) { }
+          }
+        }
+
+        if (found) {
+          setPlayingChannel(found);
+          setSelectedChannel(found);
+          const nation = nationList.find(n => n.name === found!.nation) || null;
+          if (nation) setSelectedNation(nation);
+          // Sync URL to reflect the loaded channel
+          const params = new URLSearchParams(window.location.search);
+          params.set('station', found.id);
+          history.replaceState(null, '', `?${params.toString()}`);
         }
 
       } catch (err) {
@@ -223,6 +238,9 @@ export default function App() {
     setPlayingChannel(prev => {
       if (prev?.url === channel.url) return prev;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(channel));
+      const params = new URLSearchParams(window.location.search);
+      params.set('station', channel.id);
+      history.replaceState(null, '', `?${params.toString()}`);
       return channel;
     });
     if (isMobile) setIsSidebarOpen(false);
