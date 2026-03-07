@@ -29,7 +29,7 @@ export function AppHeader({ isSidebarOpen, onToggleSidebar, playingChannel }: Ap
 
       <div className="flex items-center gap-2 md:gap-4">
         <a
-          href="https://github.com/Free-TV/IPTV"
+          href="https://github.com/birabittoh/iptv"
           target="_blank"
           rel="noopener noreferrer"
           className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
