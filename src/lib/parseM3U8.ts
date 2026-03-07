@@ -11,7 +11,12 @@ export function parseM3U8(text: string): Channel[] {
     if (trimmed.startsWith('#EXTINF:')) {
       const logoMatch = trimmed.match(/tvg-logo="(.*?)"/);
       const groupMatch = trimmed.match(/group-title="(.*?)"/);
-      const nameMatch = trimmed.split(',').pop();
+      // Title follows the comma after the last quoted attribute value.
+      // Using lastIndexOf('"') + indexOf(',') correctly handles channel
+      // names that contain commas (e.g. "BBC One, HD").
+      const lastQuote = trimmed.lastIndexOf('"');
+      const commaIdx = trimmed.indexOf(',', lastQuote);
+      const nameMatch = commaIdx >= 0 ? trimmed.slice(commaIdx + 1).trim() : undefined;
 
       let category = 'General';
       let nation = 'Unknown';
@@ -24,8 +29,8 @@ export function parseM3U8(text: string): Channel[] {
 
       currentChannel = {
         id: `ch-${channels.length}`,
-        name: nameMatch ? nameMatch.trim() : 'Unknown Channel',
-        logo: logoMatch ? logoMatch[1] : undefined,
+        name: nameMatch || 'Unknown Channel',
+        logo: logoMatch?.[1] || undefined,
         category,
         nation,
       };
