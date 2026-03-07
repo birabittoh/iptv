@@ -290,7 +290,7 @@ export default function App() {
           </div>
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight italic serif">IPTV</h1>
-            <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">Initializing compatibility layer...</p>
+            <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">Initializing...</p>
           </div>
         </motion.div>
       </div>
