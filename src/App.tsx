@@ -21,6 +21,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const FAVORITES_STORAGE_KEY = 'legacy_iptv_favorites';
   const FAVORITE_NATIONS_STORAGE_KEY = 'legacy_iptv_favorite_nations';
@@ -212,11 +213,12 @@ export default function App() {
     });
   }, [selectedNation, allChannels, favoriteUrls]);
 
-  const handleSelectNation = (nation: Nation) => {
+  const handleSelectNation = useCallback((nation: Nation | null) => {
     setSelectedNation(nation);
-  };
+    setSearchQuery('');
+  }, []);
 
-  const handleSelectChannel = (channel: Channel) => {
+  const handleSelectChannel = useCallback((channel: Channel) => {
     setSelectedChannel(channel);
     setPlayingChannel(prev => {
       if (prev?.url === channel.url) return prev;
@@ -224,10 +226,19 @@ export default function App() {
       return channel;
     });
     if (isMobile) setIsSidebarOpen(false);
-  };
+  }, [isMobile]);
+
+  const filteredChannels = useMemo(() => {
+    return channels.filter(channel =>
+      channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [channels, searchQuery]);
 
   const displayNations = useMemo(() => {
-    const sortedNations = [...nations].sort((a, b) => {
+    const filtered = nations.filter(nation =>
+      nation.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const sortedNations = [...filtered].sort((a, b) => {
       const aFav = favoriteNationIds.includes(a.id);
       const bFav = favoriteNationIds.includes(b.id);
       if (aFav && !bFav) return -1;
@@ -235,7 +246,28 @@ export default function App() {
       return a.name.localeCompare(b.name);
     });
     return sortedNations;
-  }, [nations, favoriteNationIds]);
+  }, [nations, favoriteNationIds, searchQuery]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        const index = e.key === '0' ? 9 : parseInt(e.key) - 1;
+        if (filteredChannels[index]) {
+          handleSelectChannel(filteredChannels[index]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredChannels, handleSelectChannel]);
 
   if (isLoading) {
     return (
@@ -307,7 +339,7 @@ export default function App() {
           nations={displayNations}
           selectedNation={selectedNation}
           onSelectNation={handleSelectNation}
-          channels={channels}
+          channels={filteredChannels}
           selectedChannel={selectedChannel}
           onSelectChannel={handleSelectChannel}
           favoriteUrls={favoriteUrls}
@@ -315,6 +347,8 @@ export default function App() {
           favoriteNationIds={favoriteNationIds}
           onToggleFavoriteNation={toggleFavoriteNation}
           favoritesNation={FAVORITES_NATION}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
       </motion.aside>
 

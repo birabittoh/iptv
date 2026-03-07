@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Search, Filter, PlayCircle, Globe, ChevronLeft, Star } from 'lucide-react';
 import { Channel, Nation } from '../types';
 import { clsx, type ClassValue } from 'clsx';
@@ -20,6 +20,8 @@ interface ChannelListProps {
   favoriteNationIds: string[];
   onToggleFavoriteNation: (id: string) => void;
   favoritesNation: Nation;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export const ChannelList: React.FC<ChannelListProps> = ({ 
@@ -33,18 +35,11 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   onToggleFavorite,
   favoriteNationIds,
   onToggleFavoriteNation,
-  favoritesNation
+  favoritesNation,
+  searchQuery,
+  onSearchChange
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const filteredChannels = channels.filter(channel => 
-    channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredNations = nations.filter(nation => 
-    nation.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   // Scroll to top when nation changes
   useEffect(() => {
@@ -62,7 +57,6 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             <button
               onClick={() => {
                 onSelectNation(null);
-                setSearchQuery('');
               }}
               className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-emerald-500/50 transition-all"
               title="Back"
@@ -73,7 +67,6 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             <button
               onClick={() => {
                 onSelectNation(favoritesNation);
-                setSearchQuery('');
               }}
               className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-emerald-500/50 transition-all"
               title="Favorites"
@@ -87,7 +80,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
               type="text"
               placeholder={selectedNation ? "Search channels..." : "Search regions..."}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
             />
           </div>
@@ -107,19 +100,18 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       >
         {!selectedNation ? (
           // Nations List
-          filteredNations.length === 0 ? (
+          nations.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center opacity-50">
               <Globe className="w-12 h-12 mb-2 text-zinc-300 dark:text-zinc-600" />
               <p className="text-sm text-zinc-500 dark:text-zinc-400">No regions found</p>
             </div>
           ) : (
             <div className="space-y-0.5 ml-2">
-              {filteredNations.map((nation) => (
+              {nations.map((nation) => (
                 <button
                   key={nation.id}
                   onClick={() => {
                     onSelectNation(nation);
-                    setSearchQuery('');
                   }}
                   className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all group relative overflow-hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-zinc-200"
                 >
@@ -152,14 +144,14 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           )
         ) : (
           // Channels List
-          filteredChannels.length === 0 ? (
+          channels.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center opacity-50">
               <Filter className="w-12 h-12 mb-2 text-zinc-300 dark:text-zinc-600" />
               <p className="text-sm text-zinc-500 dark:text-zinc-400">No channels found</p>
             </div>
           ) : (
             <div className="space-y-0.5 ml-2">
-              {filteredChannels.map((channel) => (
+              {channels.map((channel) => (
                 <button
                   key={channel.id}
                   onClick={() => onSelectChannel(channel)}
