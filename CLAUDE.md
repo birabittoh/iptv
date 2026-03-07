@@ -19,11 +19,21 @@ A React-based IPTV web player that fetches a public M3U8 playlist from [Free-TV/
 ```
 src/
   main.tsx            # React entry point
-  App.tsx             # Root component — state management, M3U8 parsing, layout
+  App.tsx             # Root component — thin orchestrator, layout, keyboard shortcuts
   types.ts            # Channel, ChannelGroup, Nation interfaces
   index.css           # Global styles (custom-scrollbar, etc.)
+  lib/
+    parseM3U8.ts      # Pure function: parses M3U8 text into Channel[]
+  hooks/
+    useChannelData.ts # Fetches playlist, parses channels, extracts nations
+    useFavorites.ts   # Favorite channels/nations state with localStorage persistence
+    useResponsive.ts  # isMobile / isSidebarOpen state with resize listener
   components/
+    AppHeader.tsx     # Top header bar with sidebar toggle and channel info
     ChannelList.tsx   # Sidebar — nation list + channel list with search & favorites
+    ErrorScreen.tsx   # Full-screen error state with retry button
+    LoadingScreen.tsx # Full-screen loading spinner
+    StreamInfo.tsx    # Stream metadata panel shown below the video player
     VideoPlayer.tsx   # HLS video player with custom controls overlay
 .github/workflows/
   deploy.yml          # GitHub Actions → GitHub Pages (builds on push to main)
@@ -34,18 +44,17 @@ tsconfig.json         # TypeScript config
 ## Key Architecture Decisions
 
 ### Data Flow
-- App fetches `https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8` on mount
-- `parseM3U8()` in App.tsx parses `#EXTINF` lines; `group-title` field split on `;` gives `nation;category`
+- `useChannelData` fetches `https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8` on mount
+- `parseM3U8()` in `src/lib/parseM3U8.ts` parses `#EXTINF` lines; `group-title` field split on `;` gives `nation;category`
 - Nations are extracted, deduped, sorted alphabetically, then favorite nations bubble to top
 - Channel selection → `playingChannel` state drives VideoPlayer; persisted to `localStorage` as `legacy_iptv_last_channel`
 
 ### State Management
-All state lives in `App.tsx` — no external state library. Key state:
-- `allChannels` — full parsed channel list
-- `nations` / `selectedNation` — navigation level (nation → channels)
-- `channels` — channels for currently selected nation
-- `selectedChannel` / `playingChannel` — highlighted vs. actively streaming channel
-- `favoriteUrls` / `favoriteNationIds` — persisted in localStorage
+No external state library. State is split across focused hooks and `App.tsx`:
+- `useChannelData` — `allChannels`, `nations`, `isLoading`, `error`
+- `useFavorites` — `favoriteUrls`, `favoriteNationIds` (persisted to localStorage)
+- `useResponsive` — `isMobile`, `isSidebarOpen`
+- `App.tsx` — navigation state: `selectedNation`, `selectedChannel`, `playingChannel`, `channels`, `searchQuery`
 
 ### VideoPlayer
 - Uses `hls.js` (`Hls.isSupported()`) with `lowLatencyMode: true`
