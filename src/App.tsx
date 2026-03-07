@@ -257,17 +257,25 @@ export default function App() {
         return;
       }
 
-      if (e.key >= '0' && e.key <= '9') {
+      if (e.key === 'Escape') {
+        handleSelectNation(null);
+      } else if (e.key >= '0' && e.key <= '9') {
         const index = e.key === '0' ? 9 : parseInt(e.key) - 1;
-        if (filteredChannels[index]) {
-          handleSelectChannel(filteredChannels[index]);
+        if (selectedNation) {
+          if (filteredChannels[index]) {
+            handleSelectChannel(filteredChannels[index]);
+          }
+        } else {
+          if (displayNations[index]) {
+            handleSelectNation(displayNations[index]);
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [filteredChannels, handleSelectChannel]);
+  }, [selectedNation, filteredChannels, displayNations, handleSelectChannel, handleSelectNation]);
 
   if (isLoading) {
     return (
