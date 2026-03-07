@@ -107,7 +107,7 @@ export default function App() {
         }
 
         currentChannel = {
-          id: `ch-${index}`,
+          id: `ch-${channels.length}`,
           name: nameMatch ? nameMatch.trim() : 'Unknown Channel',
           logo: logoMatch ? logoMatch[1] : undefined,
           category,
