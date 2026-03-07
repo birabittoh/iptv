@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
+import { Core } from '@openplayerjs/core';
+import { HlsMediaEngine } from '@openplayerjs/hls';
 import { Play, Pause, Volume2, VolumeX, Maximize, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -108,7 +110,7 @@ const HlsPlayer: React.FC<{ url: string; title: string }> = ({ url, title }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(true);
-  const hlsRef = useRef<Hls | null>(null);
+  const playerRef = useRef<Core | null>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleUserActivity = () => {
@@ -137,59 +139,55 @@ const HlsPlayer: React.FC<{ url: string; title: string }> = ({ url, title }) => 
     setIsLoading(true);
     setError(null);
 
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
+    if (playerRef.current) {
+      playerRef.current.destroy();
     }
 
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-      });
-      hlsRef.current = hls;
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setIsLoading(false);
-        video.play().catch(() => {
-          setIsPlaying(false);
-        });
-      });
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              setError("Network error. The stream might be offline.");
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              setError("Media error. Trying to recover...");
-              hls.recoverMediaError();
-              break;
-            default:
-              setError("An error occurred while loading the stream.");
-              hls.destroy();
-              break;
-          }
-        }
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.addEventListener('loadedmetadata', () => {
-        setIsLoading(false);
-        video.play().catch(() => setIsPlaying(false));
-      });
-      video.addEventListener('error', () => {
-        setError("Your device does not support this stream format.");
-      });
-    } else {
-      setError("HLS playback is not supported on this browser.");
+    const player = new Core(video, {
+      plugins: [
+        new HlsMediaEngine({
+          enableWorker: true,
+          lowLatencyMode: true,
+        }),
+      ],
+      duration: Infinity,
+    });
+    playerRef.current = player;
+
+    (player as any).on('hlsManifestParsed', () => {
       setIsLoading(false);
-    }
+      video.play().catch(() => {
+        setIsPlaying(false);
+      });
+    });
+
+    (player as any).on('hlsError', (data: any) => {
+      if (data.fatal) {
+        const engine = player.getPlugin<HlsMediaEngine>('hls-engine');
+        const hls = engine?.getAdapter<Hls>();
+
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            setError("Network error. The stream might be offline.");
+            hls?.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            setError("Media error. Trying to recover...");
+            hls?.recoverMediaError();
+            break;
+          default:
+            setError("An error occurred while loading the stream.");
+            player.destroy();
+            break;
+        }
+      }
+    });
+
+    player.src = url;
 
     return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
+      if (playerRef.current) {
+        playerRef.current.destroy();
       }
     };
   }, [url]);
@@ -204,18 +202,24 @@ const HlsPlayer: React.FC<{ url: string; title: string }> = ({ url, title }) => 
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
+    if (!playerRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      playerRef.current.play();
     } else {
-      videoRef.current.pause();
+      playerRef.current.pause();
     }
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
+    if (!playerRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
   }, []);
 
   useEffect(() => {
